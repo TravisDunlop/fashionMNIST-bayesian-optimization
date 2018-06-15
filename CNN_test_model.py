@@ -14,14 +14,15 @@ batch_size = 100
 learning_rate = 0.001
 
 # MNIST dataset
-train_dataset = torchvision.datasets.FashionMNIST(root='../data2/',
+train_dataset = torchvision.datasets.FashionMNIST(root='../data/',
                                            train=True,
                                            transform=transforms.ToTensor(),
                                            download=True)
 
-test_dataset = torchvision.datasets.FashionMNIST(root='../../data2/',
+test_dataset = torchvision.datasets.FashionMNIST(root='../data/',
                                           train=False,
-                                          transform=transforms.ToTensor())
+                                          transform=transforms.ToTensor(),
+                                          download=True)
 
 # Data loader
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
@@ -38,7 +39,7 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
 
 # Convolutional neural network (two convolutional layers)
 class ConvNet(nn.Module):
-    def __init__(self, num_classes=10, num_channels_1 = 16, num_channels_2 = 32):
+    def __init__(self, dropout = 0.2, num_classes=10, num_channels_1 = 16, num_channels_2 = 32):
         super(ConvNet, self).__init__()
         self.layer1 = nn.Sequential(
             nn.Conv2d(1, num_channels_1, kernel_size=5, stride=1, padding=2),
@@ -50,6 +51,7 @@ class ConvNet(nn.Module):
             nn.BatchNorm2d(num_channels_2),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2))
+        self.dropout = nn.Dropout(p = dropout)
         self.fc = nn.Linear(7*7*num_channels_2, num_classes)
 
     def forward(self, x):
@@ -57,10 +59,12 @@ class ConvNet(nn.Module):
         out = self.layer2(out)
         out = out.reshape(out.size(0), -1)
         out = self.fc(out)
+        out = self.dropout(out)
         return out
 
-def test_model(num_channels_1, num_channels_2, learning_rate, num_epochs = 1):
-    model = ConvNet(num_classes, num_channels_1, num_channels_2)
+def test_model(dropout, learning_rate, num_epochs = 1):
+
+    model = ConvNet(dropout)
 
     # Loss and optimizer
     criterion = nn.CrossEntropyLoss()
